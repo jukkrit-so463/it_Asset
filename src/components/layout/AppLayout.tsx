@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
+import Footer from "./Footer";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export function AppLayout() {
@@ -31,6 +32,7 @@ export function AppLayout() {
         <main className="flex-1 p-4 sm:p-6 overflow-auto">
           <Outlet />
         </main>
+        <Footer />
       </div>
     </div>
   );

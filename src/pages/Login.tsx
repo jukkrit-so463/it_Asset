@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { User, Lock, Settings } from "lucide-react";
+import { User, Lock, Settings, Heart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
@@ -43,10 +43,10 @@ const Login = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-lg mb-4 shadow-lg">
             <Settings className="w-8 h-8 text-blue-500" />
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
             IT Asset Management
           </h1>
-          <p className="text-white/90 text-lg">
+          <p className="text-gray-800 text-lg">
             ระบบจัดการทรัพย์สินไอที
           </p>
         </div>
@@ -130,10 +130,17 @@ const Login = () => {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-8">
-          <p className="text-gray-600 text-sm">
-            © 2025 ITNMD Asset Management System.
-          </p>
+        <div className="mt-8">
+          <div className="flex justify-between items-center text-gray-600 text-sm">
+            <div>
+              © 2025 IT Asset Management System. All rights reserved.
+            </div>
+            <div className="flex items-center gap-1">
+              Version 1.0.1 | Developed with 
+              <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+              by IT Team
+            </div>
+          </div>
         </div>
       </div>
     </div>
