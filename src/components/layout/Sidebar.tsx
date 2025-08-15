@@ -53,11 +53,6 @@ const menuItems = [
     icon: Users,
     href: "/users",
   },
-  {
-    title: "ตั้งค่าระบบ", 
-    icon: Settings,
-    href: "/settings",
-  },
 ];
 
 interface SidebarProps {
