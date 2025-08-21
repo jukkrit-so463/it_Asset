@@ -4,13 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { User, Lock, Settings, Heart } from "lucide-react";
+import { User, Lock, Settings, Heart, ComputerIcon, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isLoggedIn } = useAuth();
@@ -24,14 +26,40 @@ const Login = () => {
     }
   }, [isLoggedIn, navigate, from]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Demo login logic
-    if (username === "admin" && password === "admin123") {
-      login(username, rememberMe);
-      navigate(from, { replace: true });
-    } else {
-      alert("ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง");
+    setIsLoading(true);
+
+    try {
+      // API call to login
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Store token
+        localStorage.setItem('token', data.data.token);
+        localStorage.setItem('user', JSON.stringify(data.data.user));
+        
+        // Login through context
+        login(data.data.user, rememberMe);
+        
+        toast.success('เข้าสู่ระบบสำเร็จ');
+        navigate(from, { replace: true });
+      } else {
+        toast.error(data.message || 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -114,9 +142,17 @@ const Login = () => {
             {/* Login Button */}
             <Button
               type="submit"
-              className="w-full bg-blue-400 hover:bg-blue-500 text-white font-medium py-3 rounded-xl transition-colors"
+              disabled={isLoading}
+              className="w-full bg-blue-400 hover:bg-blue-500 text-white font-medium py-3 rounded-xl transition-colors disabled:opacity-50"
             >
-              เข้าสู่ระบบ
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  กำลังเข้าสู่ระบบ...
+                </>
+              ) : (
+                'เข้าสู่ระบบ'
+              )}
             </Button>
 
             {/* Demo Account Info */}
@@ -124,6 +160,9 @@ const Login = () => {
               <p className="text-gray-600 text-sm">Demo Account:</p>
               <p className="text-gray-600 text-sm font-mono">
                 Username: admin | Password: admin123
+              </p>
+              <p className="text-gray-500 text-xs mt-2">
+                * ต้องมีฐานข้อมูล MySQL ที่เชื่อมต่อแล้ว
               </p>
             </div>
           </form>
@@ -133,12 +172,12 @@ const Login = () => {
         <div className="mt-8">
           <div className="flex justify-between items-center text-gray-600 text-sm">
             <div>
-              © 2025 IT Asset Management System. All rights reserved.
+              © 2025 IT Asset Management System.
             </div>
             <div className="flex items-center gap-1">
               Version 1.0.1 | Developed with 
-              <Heart className="w-4 h-4 text-red-500 fill-red-500" />
-              by IT Team
+              <ComputerIcon className="w-4 h-4 text-red-500 fill-red-500" />
+              by ITNMD Team
             </div>
           </div>
         </div>

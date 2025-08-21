@@ -1,9 +1,22 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
+interface User {
+  user_id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  rank?: string;
+  role: 'user' | 'admin';
+  status: string;
+  division?: string;
+  department?: string;
+}
+
 interface AuthContextType {
   isLoggedIn: boolean;
-  username: string | null;
-  login: (username: string, rememberMe: boolean) => void;
+  user: User | null;
+  login: (user: User, rememberMe: boolean) => void;
   logout: () => void;
 }
 
@@ -23,42 +36,49 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const loginStatus = localStorage.getItem("isLoggedIn") || sessionStorage.getItem("isLoggedIn");
-    const storedUsername = localStorage.getItem("username") || sessionStorage.getItem("username");
+    const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
     
-    if (loginStatus === "true" && storedUsername) {
-      setIsLoggedIn(true);
-      setUsername(storedUsername);
+    if (token && storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        setIsLoggedIn(true);
+        setUser(userData);
+      } catch (error) {
+        console.error('Error parsing stored user data:', error);
+        logout();
+      }
     }
   }, []);
 
-  const login = (username: string, rememberMe: boolean) => {
+  const login = (userData: User, rememberMe: boolean) => {
     setIsLoggedIn(true);
-    setUsername(username);
+    setUser(userData);
     
     if (rememberMe) {
       localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("username", username);
+      localStorage.setItem("user", JSON.stringify(userData));
     } else {
       sessionStorage.setItem("isLoggedIn", "true");
-      sessionStorage.setItem("username", username);
+      sessionStorage.setItem("user", JSON.stringify(userData));
     }
   };
 
   const logout = () => {
     setIsLoggedIn(false);
-    setUsername(null);
+    setUser(null);
     localStorage.removeItem("isLoggedIn");
-    localStorage.removeItem("username");
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
     sessionStorage.removeItem("isLoggedIn");
-    sessionStorage.removeItem("username");
+    sessionStorage.removeItem("user");
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, username, login, logout }}>
+    <AuthContext.Provider value={{ isLoggedIn, user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

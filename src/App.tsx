@@ -13,7 +13,8 @@ import Assets from "./pages/Assets";
 import Reports from "./pages/Reports";
 import Maintenance from "./pages/Maintenance";
 import AssetCategories from "./pages/AssetCategories";
-import Vendors from "./pages/Vendors";
+import Locations from "./pages/Locations";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,7 +41,8 @@ const App = () => (
               <Route path="reports" element={<Reports />} />
               <Route path="maintenance" element={<Maintenance />} />
               <Route path="asset-categories" element={<AssetCategories />} />
-              <Route path="vendors" element={<Vendors />} />
+              <Route path="locations" element={<Locations />} />
+
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -10,8 +11,40 @@ import {
   FileText,
   Settings
 } from "lucide-react";
+import { apiService } from "@/services/api";
+import { toast } from "sonner";
+
+interface DashboardStats {
+  total: number;
+  byStatus: {
+    active: number;
+    in_repair: number;
+    decommissioned: number;
+  };
+  byType: Record<string, number>;
+  recent: any[];
+}
 
 export default function Dashboard() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getDashboardStats();
+      setStats(response.data);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      toast.error('เกิดข้อผิดพลาดในการโหลดข้อมูล Dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Page Header */}
@@ -24,25 +57,25 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <StatCard
           title="ครุภัณฑ์ทั้งหมด"
-          value="1"
+          value={loading ? "..." : stats?.total?.toString() || "0"}
           icon={Computer}
           variant="primary"
         />
         <StatCard
           title="ใช้งานปกติ"
-          value="1"
+          value={loading ? "..." : stats?.byStatus?.active?.toString() || "0"}
           icon={CheckCircle}
           variant="success"
         />
         <StatCard
           title="กำลังซ่อม"
-          value="0"
+          value={loading ? "..." : stats?.byStatus?.in_repair?.toString() || "0"}
           icon={AlertTriangle}
           variant="warning"
         />
         <StatCard
           title="ชำรุด"
-          value="0"
+          value={loading ? "..." : stats?.byStatus?.decommissioned?.toString() || "0"}
           icon={XCircle}
           variant="destructive"
         />
@@ -88,7 +121,10 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div className="flex items-center gap-3 p-3 sm:p-4 bg-muted rounded-lg hover:bg-muted/80 cursor-pointer transition-colors">
+            <div 
+              className="flex items-center gap-3 p-3 sm:p-4 bg-muted rounded-lg hover:bg-muted/80 cursor-pointer transition-colors"
+              onClick={() => toast.info('ฟีเจอร์ตั้งค่าระบบจะเปิดใช้งานเร็วๆ นี้')}
+            >
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
                 <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
@@ -98,7 +134,10 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <div className="flex items-center gap-3 p-3 sm:p-4 bg-muted rounded-lg hover:bg-muted/80 cursor-pointer transition-colors">
+            <div 
+              className="flex items-center gap-3 p-3 sm:p-4 bg-muted rounded-lg hover:bg-muted/80 cursor-pointer transition-colors"
+              onClick={() => toast.info('ฟีเจอร์สำรองข้อมูลจะเปิดใช้งานเร็วๆ นี้')}
+            >
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-success/10 rounded-lg flex items-center justify-center flex-shrink-0">
                 <Package className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
               </div>
@@ -108,7 +147,10 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 p-3 sm:p-4 bg-muted rounded-lg hover:bg-muted/80 cursor-pointer transition-colors">
+            <div 
+              className="flex items-center gap-3 p-3 sm:p-4 bg-muted rounded-lg hover:bg-muted/80 cursor-pointer transition-colors"
+              onClick={() => toast.info('ฟีเจอร์ประวัติการเข้าใช้งานจะเปิดใช้งานเร็วๆ นี้')}
+            >
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-warning/10 rounded-lg flex items-center justify-center flex-shrink-0">
                 <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
               </div>
@@ -118,7 +160,10 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 p-3 sm:p-4 bg-muted rounded-lg hover:bg-muted/80 cursor-pointer transition-colors">
+            <div 
+              className="flex items-center gap-3 p-3 sm:p-4 bg-muted rounded-lg hover:bg-muted/80 cursor-pointer transition-colors"
+              onClick={() => toast.info('ฟีเจอร์การแจ้งเตือนจะเปิดใช้งานเร็วๆ นี้')}
+            >
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-info/10 rounded-lg flex items-center justify-center flex-shrink-0">
                 <Users className="w-4 h-4 sm:w-5 sm:h-5 text-info" />
               </div>

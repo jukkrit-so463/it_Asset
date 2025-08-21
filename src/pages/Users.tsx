@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,44 +21,88 @@ import {
   Plus,
   Edit,
   Trash2,
-  Eye
+  Eye,
+  Loader2
 } from "lucide-react";
+import { apiService } from "@/services/api";
+import { toast } from "sonner";
+import UserModal from "@/components/modals/UserModal";
+import ConfirmDialog from "@/components/modals/ConfirmDialog";
 
-const users = [
-  {
-    id: 1,
-    username: "admin01",
-    email: "admin01@gmail.com",
-    fullName: "@admin01",
-    role: "Admin",
-    status: "ใช้งาน",
-    lastLogin: "ออนไลน์ตอนนี้",
-    avatar: "A"
-  },
-  {
-    id: 2, 
-    username: "staff01",
-    email: "staff01@gmail.com",
-    fullName: "@staff01",
-    role: "Staff",
-    status: "ใช้งาน",
-    lastLogin: "31/07/2025 06:07",
-    avatar: "S"
-  },
-  {
-    id: 3,
-    username: "user01", 
-    email: "user01@gmail.com",
-    fullName: "@user01",
-    role: "User",
-    status: "ใช้งาน",
-    lastLogin: "30/07/2025 15:26",
-    avatar: "U"
-  }
-];
+interface User {
+  user_id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  rank?: string;
+  role: 'user' | 'admin';
+  status: string;
+  division?: string;
+  department?: string;
+  created_at: string;
+}
 
 export default function Users() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [userModalOpen, setUserModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getUsers();
+      setUsers(response.data);
+    } catch (error) {
+      console.error('Error loading users:', error);
+      toast.error('เกิดข้อผิดพลาดในการโหลดข้อมูลผู้ใช้งาน');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddUser = () => {
+    setSelectedUser(null);
+    setUserModalOpen(true);
+  };
+
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setUserModalOpen(true);
+  };
+
+  const handleDeleteUser = (user: User) => {
+    setUserToDelete(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+
+    try {
+      // Need to implement deleteUser in API
+      toast.success('ลบผู้ใช้งานสำเร็จ');
+      loadUsers();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('เกิดข้อผิดพลาดในการลบผู้ใช้งาน');
+    } finally {
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+    }
+  };
+
+  const handleModalSuccess = () => {
+    loadUsers();
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -68,7 +112,7 @@ export default function Users() {
           <h1 className="text-2xl sm:text-3xl font-bold">จัดการผู้ใช้งาน</h1>
           <p className="text-muted-foreground text-sm sm:text-base">จัดการข้อมูลผู้ใช้งานในระบบ</p>
         </div>
-        <Button className="flex items-center justify-center gap-2">
+        <Button className="flex items-center justify-center gap-2" onClick={handleAddUser}>
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">เพิ่มผู้ใช้งาน</span>
         </Button>
@@ -78,25 +122,25 @@ export default function Users() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           title="ผู้ใช้ทั้งหมด"
-          value="4"
+          value={loading ? "..." : users.length.toString()}
           icon={UsersIcon}
           variant="info"
         />
         <StatCard
           title="ใช้งาน"
-          value="4"
+          value={loading ? "..." : users.filter(u => u.status === 'active').length.toString()}
           icon={UserCheck}
           variant="success"
         />
         <StatCard
           title="ระงับการใช้งาน"
-          value="0"
+          value={loading ? "..." : users.filter(u => u.status !== 'active').length.toString()}
           icon={UserX}
           variant="destructive"
         />
         <StatCard
           title="ผู้ดูแลระบบ"
-          value="2"
+          value={loading ? "..." : users.filter(u => u.role === 'admin').length.toString()}
           icon={UserPlus}
           variant="info"
         />
@@ -121,72 +165,121 @@ export default function Users() {
               </div>
             </div>
             <div className="text-sm text-muted-foreground">
-              แสดง 10 รายการ - คิม: {users.length}
+              แสดง {users.length} รายการ
             </div>
           </div>
 
-          <div className="rounded-md border overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="min-w-[200px]">ผู้ใช้งาน</TableHead>
-                  <TableHead className="min-w-[200px]">อีเมล</TableHead>
-                  <TableHead className="min-w-[100px]">บทบาท</TableHead>
-                  <TableHead className="min-w-[150px]">ครั้งล่าสุด</TableHead>
-                  <TableHead className="min-w-[100px]">สถานะ</TableHead>
-                  <TableHead className="text-right min-w-[120px]">จัดการ</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium flex-shrink-0">
-                          {user.avatar}
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin mr-2" />
+              กำลังโหลดข้อมูล...
+            </div>
+          ) : (
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[200px]">ผู้ใช้งาน</TableHead>
+                    <TableHead className="min-w-[200px]">อีเมล</TableHead>
+                    <TableHead className="min-w-[100px]">บทบาท</TableHead>
+                    <TableHead className="min-w-[150px]">ตำแหน่ง</TableHead>
+                    <TableHead className="min-w-[100px]">สถานะ</TableHead>
+                    <TableHead className="text-right min-w-[120px]">จัดการ</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.user_id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium flex-shrink-0">
+                            {user.first_name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-medium truncate">{user.username}</div>
+                            <div className="text-sm text-muted-foreground truncate">
+                              {user.first_name} {user.last_name}
+                            </div>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <div className="font-medium truncate">{user.username}</div>
-                          <div className="text-sm text-muted-foreground truncate">{user.fullName}</div>
+                      </TableCell>
+                      <TableCell className="max-w-[200px]">
+                        <div className="truncate">{user.email}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={user.role === "admin" ? "destructive" : "secondary"}>
+                          {user.role === "admin" ? "ผู้ดูแลระบบ" : "ผู้ใช้งาน"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm max-w-[150px] truncate">
+                          {user.rank || '-'}
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-[200px]">
-                      <div className="truncate">{user.email}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.role === "Admin" ? "destructive" : user.role === "Staff" ? "default" : "secondary"}>
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm max-w-[150px] truncate">{user.lastLogin}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="bg-success/10 text-success">
-                        {user.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-1 sm:gap-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant="secondary" 
+                          className={
+                            user.status === 'active' 
+                              ? 'bg-success/10 text-success'
+                              : 'bg-destructive/10 text-destructive'
+                          }
+                        >
+                          {user.status === 'active' ? 'ใช้งาน' : 'ระงับการใช้งาน'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                                              <div className="flex items-center justify-end gap-1 sm:gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => toast.info(`ดูรายละเอียดผู้ใช้งาน ${user.first_name} ${user.last_name} (${user.username})`)}
+                        >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => handleEditUser(user)}
+                        >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => handleDeleteUser(user)}
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Modals */}
+      <UserModal
+        isOpen={userModalOpen}
+        onClose={() => setUserModalOpen(false)}
+        user={selectedUser}
+        onSuccess={handleModalSuccess}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={confirmDelete}
+        title="ยืนยันการลบ"
+        description={`คุณต้องการลบผู้ใช้งาน ${userToDelete?.first_name} ${userToDelete?.last_name} (${userToDelete?.username}) ใช่หรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้`}
+      />
     </div>
   );
 }

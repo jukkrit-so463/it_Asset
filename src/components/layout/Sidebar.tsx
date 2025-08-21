@@ -13,7 +13,8 @@ import {
   Computer,
   ChevronDown,
   ChevronRight,
-  X
+  X,
+  MapPin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -39,9 +40,9 @@ const menuItems = [
     href: "/maintenance",
   },
   {
-    title: "คู่ค้าหน่าย",
-    icon: Settings,
-    href: "/vendors",
+    title: "สถานที่",
+    icon: MapPin,
+    href: "/locations",
   },
   {
     title: "รายงาน",

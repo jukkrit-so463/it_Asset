@@ -1,73 +1,221 @@
-# Welcome to your Lovable project
+# IT Asset Management System
 
-## Project info
+ระบบจัดการทรัพย์สินไอที ที่พัฒนาด้วย React + TypeScript และ Node.js + MySQL
 
-**URL**: https://lovable.dev/projects/31e1228a-3bb6-4ba6-af9f-2e1b1c9d0a58
+## Features
 
-## How can I edit this code?
+- 🔐 ระบบ Authentication ด้วย JWT
+- 👥 จัดการผู้ใช้งาน (Users)
+- 💻 จัดการอุปกรณ์ (Assets/Devices)
+- 📍 จัดการสถานที่ (Locations)
+- 🌐 IP Address Management
+- 📊 Dashboard และ Reports
+- 🔒 Role-based Access Control (Admin/User)
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+### Frontend
+- React 18 + TypeScript
+- Vite
+- Tailwind CSS
+- Shadcn/ui Components
+- React Router DOM
+- React Hook Form + Zod
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/31e1228a-3bb6-4ba6-af9f-2e1b1c9d0a58) and start prompting.
+### Backend
+- Node.js + Express
+- MySQL Database
+- JWT Authentication
+- bcryptjs (Password Hashing)
+- Helmet (Security)
+- CORS
+- Rate Limiting
 
-Changes made via Lovable will be committed automatically to this repo.
+## Prerequisites
 
-**Use your preferred IDE**
+- Node.js (v16 or higher)
+- MySQL Server
+- npm or yarn
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 1. Clone Repository
+```bash
+git clone <repository-url>
+cd it_Asset
+```
 
-Follow these steps:
+### 2. Install Dependencies
+```bash
+npm install
+```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 3. Database Setup
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+#### 3.1 Create MySQL Database
+```sql
+CREATE DATABASE it_asset_db;
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+#### 3.2 Import Database Schema
+```bash
+mysql -u root -p it_asset_db < it_asset_db.sql
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+#### 3.3 Create Admin User
+```sql
+INSERT INTO users (username, password, email, first_name, last_name, role) 
+VALUES ('admin', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4tbQJ8KqG', 'admin@example.com', 'Admin', 'User', 'admin');
+```
+*Password: admin123*
+
+### 4. Environment Configuration
+
+สร้างไฟล์ `.env` ในโฟลเดอร์หลัก:
+```env
+# Database Configuration
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=it_asset_db
+DB_PORT=3306
+
+# JWT Configuration
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+JWT_EXPIRES_IN=24h
+
+# Server Configuration
+PORT=5000
+NODE_ENV=development
+
+# CORS Configuration
+CORS_ORIGIN=http://localhost:5173
+```
+
+### 5. Start Development Servers
+
+#### Option 1: Start Both Frontend and Backend
+```bash
+npm run dev:full
+```
+
+#### Option 2: Start Separately
+```bash
+# Terminal 1 - Backend
+npm run server
+
+# Terminal 2 - Frontend
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Usage
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Default Login Credentials
+- **Username:** admin
+- **Password:** admin123
 
-**Use GitHub Codespaces**
+### API Endpoints
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+#### Authentication
+- `POST /api/auth/login` - User login
+- `GET /api/auth/profile` - Get user profile
 
-## What technologies are used for this project?
+#### Assets
+- `GET /api/assets` - Get all devices
+- `POST /api/assets` - Create new device
+- `PUT /api/assets/:id` - Update device
+- `DELETE /api/assets/:id` - Delete device
 
-This project is built with:
+#### Users
+- `GET /api/users` - Get all users (Admin only)
+- `POST /api/users` - Create new user (Admin only)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Security Features
 
-## How can I deploy this project?
+- ✅ JWT Token Authentication
+- ✅ Password Hashing (bcrypt)
+- ✅ CORS Protection
+- ✅ Helmet Security Headers
+- ✅ Rate Limiting
+- ✅ Input Validation
+- ✅ SQL Injection Prevention
+- ✅ XSS Protection
 
-Simply open [Lovable](https://lovable.dev/projects/31e1228a-3bb6-4ba6-af9f-2e1b1c9d0a58) and click on Share -> Publish.
+## Project Structure
 
-## Can I connect a custom domain to my Lovable project?
+```
+it_Asset/
+├── server/                 # Backend API
+│   ├── config/
+│   │   └── database.js     # Database connection
+│   ├── middleware/
+│   │   └── auth.js         # Authentication middleware
+│   ├── routes/
+│   │   ├── auth.js         # Auth routes
+│   │   ├── assets.js       # Asset routes
+│   │   └── users.js        # User routes
+│   └── index.js            # Server entry point
+├── src/                    # Frontend
+│   ├── components/         # React components
+│   ├── contexts/           # React contexts
+│   ├── pages/              # Page components
+│   └── ...
+├── it_asset_db.sql         # Database schema
+└── package.json
+```
 
-Yes, you can!
+## Development
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Adding New Features
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+1. **Backend API**: Add routes in `server/routes/`
+2. **Frontend**: Add components in `src/components/` or pages in `src/pages/`
+3. **Database**: Update schema in `it_asset_db.sql`
+
+### Code Style
+
+- Use TypeScript for type safety
+- Follow ESLint rules
+- Use Prettier for formatting
+- Write meaningful commit messages
+
+## Production Deployment
+
+### Environment Variables
+- Set `NODE_ENV=production`
+- Use strong `JWT_SECRET`
+- Configure production database
+- Set proper `CORS_ORIGIN`
+
+### Security Checklist
+- [ ] Change default admin password
+- [ ] Use HTTPS
+- [ ] Set up proper firewall rules
+- [ ] Regular database backups
+- [ ] Monitor logs
+- [ ] Update dependencies regularly
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Database Connection Error**
+   - Check MySQL service is running
+   - Verify database credentials in `.env`
+   - Ensure database exists
+
+2. **CORS Error**
+   - Check `CORS_ORIGIN` in `.env`
+   - Verify frontend URL matches
+
+3. **JWT Token Error**
+   - Check `JWT_SECRET` is set
+   - Verify token expiration
+
+## License
+
+This project is licensed under the MIT License.
+
+## Support
+
+For support and questions, please contact the development team.

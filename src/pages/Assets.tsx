@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,54 +27,91 @@ import {
   Trash2,
   Eye,
   Download,
-  RotateCcw
+  RotateCcw,
+  Loader2
 } from "lucide-react";
+import { apiService } from "@/services/api";
+import { toast } from "sonner";
+import AssetModal from "@/components/modals/AssetModal";
+import ConfirmDialog from "@/components/modals/ConfirmDialog";
 
-const assets = [
-  {
-    id: "COM-2025070001",
-    serialNumber: "COM-Patroj",
-    name: "Lenovo L13",
-    category: "Computer",
-    brand: "Dell",
-    location: "ชั้นกลัวบอก",
-    value: "18,500",
-    status: "ใช้งานปกติ",
-    owner: "ผู้ดูแลระบบ Factory1",
-    repairs: 2,
-    qrCode: true
-  },
-  {
-    id: "COM-2025070002", 
-    serialNumber: "COM-002",
-    name: "HP 450",
-    category: "Computer",
-    brand: "HP",
-    location: "ใช้งานปกติ",
-    value: "185,500.00",
-    status: "ใช้งานปกติ",
-    owner: "ผู้ดูแลระบบ โรงงาน 2",
-    repairs: 1,
-    qrCode: true
-  },
-  {
-    id: "COM-2025070003",
-    serialNumber: "COM-00001", 
-    name: "Lenovo L13",
-    category: "Computer",
-    brand: "Lenovo",
-    location: "ใช้งานปกติ",
-    value: "30,000.00",
-    status: "ใช้งานปกติ",
-    owner: "admin01 #22",
-    repairs: 1,
-    qrCode: false
-  }
-];
+interface Asset {
+  device_id: number;
+  service_tag: string;
+  device_type: string;
+  user_id?: number;
+  locations_id?: number;
+  date_received?: string;
+  operational_status: string;
+  first_name?: string;
+  last_name?: string;
+  division?: string;
+  department?: string;
+  ip_address?: string;
+  created_at: string;
+}
 
 export default function Assets() {
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("all");
+  const [assetModalOpen, setAssetModalOpen] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
+
+  useEffect(() => {
+    loadAssets();
+  }, []);
+
+  const loadAssets = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getAssets();
+      setAssets(response.data);
+    } catch (error) {
+      console.error('Error loading assets:', error);
+      toast.error('เกิดข้อผิดพลาดในการโหลดข้อมูลครุภัณฑ์');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddAsset = () => {
+    setSelectedAsset(null);
+    setAssetModalOpen(true);
+  };
+
+  const handleEditAsset = (asset: Asset) => {
+    setSelectedAsset(asset);
+    setAssetModalOpen(true);
+  };
+
+  const handleDeleteAsset = (asset: Asset) => {
+    setAssetToDelete(asset);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!assetToDelete) return;
+
+    try {
+      await apiService.deleteAsset(assetToDelete.device_id.toString());
+      toast.success('ลบครุภัณฑ์สำเร็จ');
+      loadAssets();
+    } catch (error) {
+      console.error('Error deleting asset:', error);
+      toast.error('เกิดข้อผิดพลาดในการลบครุภัณฑ์');
+    } finally {
+      setDeleteDialogOpen(false);
+      setAssetToDelete(null);
+    }
+  };
+
+  const handleModalSuccess = () => {
+    loadAssets();
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -85,15 +122,23 @@ export default function Assets() {
           <p className="text-muted-foreground text-sm sm:text-base">จัดการข้อมูลครุภัณฑ์ IT ทั้งหมด</p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          <Button variant="outline" className="flex items-center justify-center gap-2">
+          <Button 
+            variant="outline" 
+            className="flex items-center justify-center gap-2"
+            onClick={() => toast.info('ฟีเจอร์สแกน QR จะเปิดใช้งานเร็วๆ นี้')}
+          >
             <QrCode className="w-4 h-4" />
             <span className="hidden sm:inline">สแกน QR</span>
           </Button>
-          <Button variant="outline" className="flex items-center justify-center gap-2 bg-success text-success-foreground">
+          <Button 
+            variant="outline" 
+            className="flex items-center justify-center gap-2 bg-success text-success-foreground"
+            onClick={() => toast.info('ฟีเจอร์พิมพ์สติกเกอร์จะเปิดใช้งานเร็วๆ นี้')}
+          >
             <FileDown className="w-4 h-4" />
             <span className="hidden sm:inline">พิมพ์สติกเกอร์</span>
           </Button>
-          <Button className="flex items-center justify-center gap-2">
+          <Button className="flex items-center justify-center gap-2" onClick={handleAddAsset}>
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">เพิ่มครุภัณฑ์</span>
           </Button>
@@ -125,10 +170,22 @@ export default function Assets() {
                 <SelectItem value="factory2">โรงงาน 2</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" className="bg-primary text-primary-foreground">
+            <Button 
+              variant="outline" 
+              className="bg-primary text-primary-foreground"
+              onClick={() => toast.info('ฟีเจอร์กรองข้อมูลจะเปิดใช้งานเร็วๆ นี้')}
+            >
               กรอง
             </Button>
-            <Button variant="ghost" size="icon">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => {
+                setSearchTerm("");
+                setSelectedLocation("all");
+                toast.success('รีเซ็ตการกรองแล้ว');
+              }}
+            >
               <RotateCcw className="w-4 h-4" />
             </Button>
           </div>
@@ -141,11 +198,20 @@ export default function Assets() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="text-base sm:text-lg">รายการครุภัณฑ์ (6 รายการ)</CardTitle>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => toast.info('ฟีเจอร์พิมพ์รายงานจะเปิดใช้งานเร็วๆ นี้')}
+              >
                 <FileDown className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">พิมพ์</span>
               </Button>
-              <Button variant="outline" size="sm" className="bg-success text-success-foreground">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="bg-success text-success-foreground"
+                onClick={() => toast.info('ฟีเจอร์ส่งออก Excel จะเปิดใช้งานเร็วๆ นี้')}
+              >
                 <Download className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Excel</span>
               </Button>
@@ -154,90 +220,138 @@ export default function Assets() {
         </CardHeader>
         <CardContent>
           <div className="text-sm text-muted-foreground mb-4">
-            แสดง 10 รายการ - คิม: {assets.length}
+            แสดง {assets.length} รายการ
           </div>
 
-          <div className="rounded-md border overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="min-w-[200px]">รหัสครุภัณฑ์</TableHead>
-                  <TableHead className="min-w-[150px]">ชื่อครุภัณฑ์</TableHead>
-                  <TableHead className="min-w-[100px]">ประเภท</TableHead>
-                  <TableHead className="min-w-[120px]">ยี่ห้อ/รุ่น</TableHead>
-                  <TableHead className="min-w-[150px]">ผู้ใช้งาน</TableHead>
-                  <TableHead className="min-w-[100px]">สถานะ</TableHead>
-                  <TableHead className="min-w-[80px]">การซ่อม</TableHead>
-                  <TableHead className="text-right min-w-[120px]">จัดการ</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {assets.map((asset) => (
-                  <TableRow key={asset.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {asset.qrCode ? (
-                          <div className="w-8 h-8 border-2 border-gray-400 flex items-center justify-center text-xs">
-                            QR
-                          </div>
-                        ) : (
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin mr-2" />
+              กำลังโหลดข้อมูล...
+            </div>
+          ) : (
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[200px]">รหัสครุภัณฑ์</TableHead>
+                    <TableHead className="min-w-[150px]">ประเภท</TableHead>
+                    <TableHead className="min-w-[120px]">Service Tag</TableHead>
+                    <TableHead className="min-w-[150px]">ผู้ใช้งาน</TableHead>
+                    <TableHead className="min-w-[150px]">สถานที่</TableHead>
+                    <TableHead className="min-w-[100px]">สถานะ</TableHead>
+                    <TableHead className="min-w-[100px]">IP Address</TableHead>
+                    <TableHead className="text-right min-w-[120px]">จัดการ</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {assets.map((asset) => (
+                    <TableRow key={asset.device_id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
                           <div className="w-8 h-8 bg-muted rounded flex items-center justify-center">
                             <QrCode className="w-4 h-4" />
                           </div>
-                        )}
-                        <div className="min-w-0">
-                          <div className="font-medium truncate">{asset.id}</div>
-                          <div className="text-sm text-muted-foreground truncate">S/N: {asset.serialNumber}</div>
+                          <div className="min-w-0">
+                            <div className="font-medium truncate">DEV-{asset.device_id.toString().padStart(6, '0')}</div>
+                            <div className="text-sm text-muted-foreground truncate">ID: {asset.device_id}</div>
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium max-w-[150px]">
-                      <div className="truncate">{asset.name}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="bg-info/10 text-info">
-                        {asset.category}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="max-w-[120px]">
-                        <div className="truncate">{asset.brand}</div>
-                        <div className="text-sm text-muted-foreground truncate">{asset.name}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm max-w-[150px] truncate">{asset.owner}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="bg-success/10 text-success">
-                        {asset.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="bg-warning/10 text-warning">
-                        {asset.repairs}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-1 sm:gap-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="bg-info/10 text-info">
+                          {asset.device_type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium max-w-[150px]">
+                        <div className="truncate">{asset.service_tag || '-'}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm max-w-[150px] truncate">
+                          {asset.first_name && asset.last_name 
+                            ? `${asset.first_name} ${asset.last_name}`
+                            : 'ไม่ระบุ'
+                          }
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-[120px]">
+                          <div className="truncate">{asset.division || '-'}</div>
+                          <div className="text-sm text-muted-foreground truncate">{asset.department || '-'}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant="secondary" 
+                          className={
+                            asset.operational_status === 'active' 
+                              ? 'bg-success/10 text-success'
+                              : asset.operational_status === 'in_repair'
+                              ? 'bg-warning/10 text-warning'
+                              : 'bg-destructive/10 text-destructive'
+                          }
+                        >
+                          {asset.operational_status === 'active' ? 'ใช้งานปกติ' :
+                           asset.operational_status === 'in_repair' ? 'กำลังซ่อม' :
+                           asset.operational_status === 'decommissioned' ? 'ชำรุด' : asset.operational_status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-muted-foreground">
+                          {asset.ip_address || '-'}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                                              <div className="flex items-center justify-end gap-1 sm:gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => toast.info(`ดูรายละเอียดครุภัณฑ์ ${asset.device_type} (ID: ${asset.device_id})`)}
+                        >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => handleEditAsset(asset)}
+                        >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => handleDeleteAsset(asset)}
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Modals */}
+      <AssetModal
+        isOpen={assetModalOpen}
+        onClose={() => setAssetModalOpen(false)}
+        asset={selectedAsset}
+        onSuccess={handleModalSuccess}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={confirmDelete}
+        title="ยืนยันการลบ"
+        description={`คุณต้องการลบครุภัณฑ์ ${assetToDelete?.device_type} (ID: ${assetToDelete?.device_id}) ใช่หรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้`}
+      />
     </div>
   );
 }
