@@ -1,253 +1,148 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Search,
-  Plus,
-  Edit,
-  Trash2,
-  Loader2,
-  MapPin,
-  Eye
-} from "lucide-react";
-import { apiService } from "@/services/api";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { toast } from "sonner";
-import LocationModal from "@/components/modals/LocationModal";
-import ConfirmDialog from "@/components/modals/ConfirmDialog";
 
+import { apiService } from "@/services/api";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+
+// 1. กำหนด Type ของข้อมูล Location ให้ชัดเจน
 interface Location {
   locations_id: number;
   division: string;
   department: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
+  status: 'active' | 'inactive';
 }
 
-export default function Locations() {
-  const [locations, setLocations] = useState<Location[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [locationModalOpen, setLocationModalOpen] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [locationToDelete, setLocationToDelete] = useState<Location | null>(null);
+interface LocationModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void; // เปลี่ยนจาก onSave เป็น onSuccess เพื่อให้ตรงกัน
+  location: Location | null;
+}
 
+// 2. สร้าง Schema สำหรับ validation ด้วย Zod
+const formSchema = z.object({
+  division: z.string().min(1, "กรุณากรอกชื่อหน่วยงาน"),
+  department: z.string().min(1, "กรุณากรอกชื่อแผนก"),
+  status: z.enum(["active", "inactive"]),
+});
+
+export default function LocationModal({ isOpen, onClose, onSuccess, location }: LocationModalProps) {
+  const isEditMode = !!location;
+
+  // 3. ใช้ react-hook-form ในการจัดการฟอร์ม
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      division: "",
+      department: "",
+      status: "active",
+    },
+  });
+
+  // 4. ตั้งค่าข้อมูลในฟอร์มเมื่อ prop `location` เปลี่ยนแปลง
   useEffect(() => {
-    loadLocations();
-  }, []);
+    if (location) {
+      form.reset(location);
+    } else {
+      form.reset({
+        division: "",
+        department: "",
+        status: "active",
+      });
+    }
+  }, [location, form]);
 
-  const loadLocations = async () => {
+  // 5. ฟังก์ชันสำหรับ Submit ฟอร์ม
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      setLoading(true);
-      const response = await apiService.getLocations();
-      setLocations(response.data);
+      if (isEditMode) {
+        // โหมดแก้ไข: เรียกใช้ updateLocation
+        await apiService.updateLocation(location.locations_id.toString(), values);
+        toast.success("อัปเดตข้อมูลสถานที่สำเร็จ");
+      } else {
+        // โหมดสร้างใหม่: เรียกใช้ createLocation
+        await apiService.createLocation(values);
+        toast.success("เพิ่มสถานที่ใหม่สำเร็จ");
+      }
+      onSuccess(); // เรียกเพื่อให้หน้าหลัก (LocationsPage) โหลดข้อมูลใหม่
+      onClose();   // ปิด Modal
     } catch (error) {
-      console.error('Error loading locations:', error);
-      toast.error('เกิดข้อผิดพลาดในการโหลดข้อมูลสถานที่');
-    } finally {
-      setLoading(false);
+      console.error("Error saving location:", error);
+      toast.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
     }
   };
-
-  const handleAddLocation = () => {
-    setSelectedLocation(null);
-    setLocationModalOpen(true);
-  };
-
-  const handleEditLocation = (location: Location) => {
-    setSelectedLocation(location);
-    setLocationModalOpen(true);
-  };
-
-  const handleDeleteLocation = (location: Location) => {
-    setLocationToDelete(location);
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!locationToDelete) return;
-
-    try {
-      // Need to implement deleteLocation in API
-      toast.success('ลบสถานที่สำเร็จ');
-      loadLocations();
-    } catch (error) {
-      console.error('Error deleting location:', error);
-      toast.error('เกิดข้อผิดพลาดในการลบสถานที่');
-    } finally {
-      setDeleteDialogOpen(false);
-      setLocationToDelete(null);
-    }
-  };
-
-  const handleModalSuccess = () => {
-    loadLocations();
-  };
-
-  const filteredLocations = locations.filter(location =>
-    location.division.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    location.department.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">จัดการสถานที่</h1>
-          <p className="text-muted-foreground text-sm sm:text-base">จัดการข้อมูลสถานที่และแผนกต่างๆ</p>
-        </div>
-        <Button className="flex items-center justify-center gap-2" onClick={handleAddLocation}>
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">เพิ่มสถานที่</span>
-        </Button>
-      </div>
-
-      {/* Search */}
-      <Card>
-        <CardContent className="pt-4 sm:pt-6">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  placeholder="ค้นหาฝ่าย, แผนก..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Locations Table */}
-      <Card>
-        <CardHeader className="pb-3 sm:pb-6">
-          <CardTitle className="text-base sm:text-lg">รายการสถานที่ ({filteredLocations.length} รายการ)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin mr-2" />
-              กำลังโหลดข้อมูล...
-            </div>
-          ) : (
-            <div className="rounded-md border overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="min-w-[200px]">สถานที่</TableHead>
-                    <TableHead className="min-w-[150px]">ฝ่าย</TableHead>
-                    <TableHead className="min-w-[150px]">แผนก</TableHead>
-                    <TableHead className="min-w-[100px]">สถานะ</TableHead>
-                    <TableHead className="min-w-[120px]">วันที่สร้าง</TableHead>
-                    <TableHead className="text-right min-w-[120px]">จัดการ</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredLocations.map((location) => (
-                    <TableRow key={location.locations_id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-muted rounded flex items-center justify-center">
-                            <MapPin className="w-4 h-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="font-medium truncate">
-                              {location.division} - {location.department}
-                            </div>
-                            <div className="text-sm text-muted-foreground truncate">ID: {location.locations_id}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium">{location.division}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium">{location.department}</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="secondary" 
-                          className={
-                            location.status === 'active' 
-                              ? 'bg-success/10 text-success'
-                              : 'bg-destructive/10 text-destructive'
-                          }
-                        >
-                          {location.status === 'active' ? 'ใช้งาน' : 'ไม่ใช้งาน'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(location.created_at).toLocaleDateString('th-TH')}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-end gap-1 sm:gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8"
-                            onClick={() => toast.info(`ดูรายละเอียดสถานที่ ${location.division} - ${location.department}`)}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8"
-                            onClick={() => handleEditLocation(location)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8"
-                            onClick={() => handleDeleteLocation(location)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Modals */}
-      <LocationModal
-        isOpen={locationModalOpen}
-        onClose={() => setLocationModalOpen(false)}
-        location={selectedLocation}
-        onSuccess={handleModalSuccess}
-      />
-
-      <ConfirmDialog
-        isOpen={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-        onConfirm={confirmDelete}
-        title="ยืนยันการลบ"
-        description={`คุณต้องการลบสถานที่ ${locationToDelete?.division} - ${locationToDelete?.department} ใช่หรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้`}
-      />
-    </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{isEditMode ? "แก้ไขสถานที่" : "เพิ่มสถานที่ใหม่"}</DialogTitle>
+        </DialogHeader>
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="division"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>หน่วยงาน *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="เช่น ฝ่ายเทคโนโลยีสารสนเทศ" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="department"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>แผนก *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="เช่น แผนกพัฒนาระบบ" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>สถานะ</FormLabel>
+                   <Select onValueChange={field.onChange} defaultValue={field.value}>
+                     <FormControl>
+                       <SelectTrigger><SelectValue /></SelectTrigger>
+                     </FormControl>
+                     <SelectContent>
+                       <SelectItem value="active">ใช้งาน</SelectItem>
+                       <SelectItem value="inactive">ไม่ใช้งาน</SelectItem>
+                     </SelectContent>
+                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <DialogFooter className="pt-4">
+                <Button type="button" variant="outline" onClick={onClose}>ยกเลิก</Button>
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                    {form.formState.isSubmitting ? 'กำลังบันทึก...' : (isEditMode ? 'อัปเดต' : 'เพิ่ม')}
+                </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }

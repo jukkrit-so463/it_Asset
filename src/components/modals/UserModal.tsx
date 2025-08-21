@@ -1,116 +1,140 @@
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { toast } from "sonner";
+
 import { apiService } from "@/services/api";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
-interface UserModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  user?: any;
-  onSuccess: () => void;
-}
-
+// 1. กำหนด Type ของข้อมูลให้ชัดเจน
 interface Location {
   locations_id: number;
   division: string;
   department: string;
 }
 
+// ทำให้ User type มีความชัดเจนมากขึ้น
+interface User {
+  user_id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  rank: string;
+  locations_id: number;
+  role: "user" | "admin";
+  status: "active" | "inactive";
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
+
+interface UserModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  user: User | null; // ใช้ User type แทน any
+}
+
+// 2. สร้าง Schema สำหรับ validation ด้วย Zod
+// โหมด 'edit' จะไม่บังคับรหัสผ่าน
+const createUserSchema = z.object({
+  username: z.string().min(3, "ชื่อผู้ใช้งานต้องมีอย่างน้อย 3 ตัวอักษร"),
+  email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
+  password: z.string().min(8, "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร"),
+  first_name: z.string().min(1, "กรุณากรอกชื่อ"),
+  last_name: z.string().min(1, "กรุณากรอกนามสกุล"),
+  rank: z.string().optional(),
+  locations_id: z.string().min(1, "กรุณาเลือกสถานที่ทำงาน"),
+  role: z.enum(["user", "admin"]),
+  status: z.enum(["active", "inactive"]),
+});
+
+const updateUserSchema = createUserSchema.extend({
+  password: z.string().min(8, "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร").or(z.literal("")).optional(),
+});
+
+
 export default function UserModal({ isOpen, onClose, user, onSuccess }: UserModalProps) {
-  const [loading, setLoading] = useState(false);
   const [locations, setLocations] = useState<Location[]>([]);
-  const [formData, setFormData] = useState({
-    username: "",
-    password: "",
-    email: "",
-    first_name: "",
-    last_name: "",
-    rank: "",
-    locations_id: "",
-    role: "user",
-    status: "active"
+  const isEditMode = !!user;
+
+  // 3. ใช้ react-hook-form ในการจัดการฟอร์ม
+  const form = useForm<z.infer<typeof createUserSchema>>({
+    resolver: zodResolver(isEditMode ? updateUserSchema : createUserSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      password: "",
+      first_name: "",
+      last_name: "",
+      rank: "",
+      locations_id: "",
+      role: "user",
+      status: "active",
+    },
   });
 
+  // 4. ตั้งค่าข้อมูลในฟอร์มเมื่อ user prop เปลี่ยนแปลง
   useEffect(() => {
     if (isOpen) {
-      loadLocations();
-      if (user) {
-        setFormData({
-          username: user.username || "",
-          password: "",
-          email: user.email || "",
-          first_name: user.first_name || "",
-          last_name: user.last_name || "",
-          rank: user.rank || "",
-          locations_id: user.locations_id?.toString() || "",
-          role: user.role || "user",
-          status: user.status || "active"
-        });
-      } else {
-        setFormData({
-          username: "",
-          password: "",
-          email: "",
-          first_name: "",
-          last_name: "",
-          rank: "",
-          locations_id: "",
-          role: "user",
-          status: "active"
-        });
-      }
+        loadLocations();
+        if (user) {
+            form.reset({
+                ...user,
+                locations_id: user.locations_id?.toString() || "",
+                password: "", // ไม่ต้องแสดงรหัสผ่านเดิม
+            });
+        } else {
+            form.reset(); // เคลียร์ฟอร์มสำหรับสร้างใหม่
+        }
     }
-  }, [isOpen, user]);
+  }, [isOpen, user, form]);
 
   const loadLocations = async () => {
     try {
-      const response = await apiService.getLocations();
-      setLocations(response.data);
+      const response = await apiService.getLocations() as ApiResponse<Location[]>;
+      if (response.success) {
+        setLocations(response.data);
+      }
     } catch (error) {
       console.error('Error loading locations:', error);
+      toast.error("ไม่สามารถโหลดข้อมูลสถานที่ได้");
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
+  // 5. ฟังก์ชันสำหรับ Submit ฟอร์ม
+  const onSubmit = async (values: z.infer<typeof createUserSchema>) => {
     try {
       const submitData = {
-        ...formData,
-        locations_id: formData.locations_id ? parseInt(formData.locations_id) : null
+        ...values,
+        locations_id: parseInt(values.locations_id),
       };
 
-      // Remove password if empty (for update)
-      if (!submitData.password) {
-        delete submitData.password;
-      }
-
-      if (user) {
-        // Update user (need to implement updateUser in API)
-        toast.success('อัปเดตผู้ใช้งานสำเร็จ');
+      if (isEditMode) {
+        // ถ้าเป็นโหมดแก้ไข และไม่ได้กรอกรหัสผ่านใหม่ ให้ลบ key password ออก
+        if (!submitData.password) {
+          delete (submitData as any).password;
+        }
+        await apiService.updateUser(user.user_id.toString(), submitData);
+        toast.success("อัปเดตข้อมูลผู้ใช้งานสำเร็จ");
       } else {
         await apiService.createUser(submitData);
-        toast.success('เพิ่มผู้ใช้งานสำเร็จ');
+        toast.success("เพิ่มผู้ใช้งานใหม่สำเร็จ");
       }
-
-      onSuccess();
-      onClose();
+      onSuccess(); // เรียกเพื่อให้หน้าหลักโหลดข้อมูลใหม่
+      onClose();   // ปิด Modal
     } catch (error) {
-      console.error('Error saving user:', error);
-      toast.error('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
-    } finally {
-      setLoading(false);
+      console.error("Error saving user:", error);
+      toast.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
     }
   };
 
@@ -118,143 +142,169 @@ export default function UserModal({ isOpen, onClose, user, onSuccess }: UserModa
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {user ? 'แก้ไขผู้ใช้งาน' : 'เพิ่มผู้ใช้งานใหม่'}
-          </DialogTitle>
+          <DialogTitle>{isEditMode ? "แก้ไขผู้ใช้งาน" : "เพิ่มผู้ใช้งานใหม่"}</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="username">ชื่อผู้ใช้งาน *</Label>
-            <Input
-              id="username"
-              value={formData.username}
-              onChange={(e) => setFormData({...formData, username: e.target.value})}
-              placeholder="กรอกชื่อผู้ใช้งาน"
-              required
+        {/* 6. ใช้ Component <Form> จาก ShadCN */}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ชื่อผู้ใช้งาน *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="กรอกชื่อผู้ใช้งาน" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">
-              รหัสผ่าน {user ? '(เว้นว่างถ้าไม่เปลี่ยน)' : '*'}
-            </Label>
-            <Input
-              id="password"
-              type="password"
-              value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
-              placeholder="กรอกรหัสผ่าน"
-              required={!user}
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>รหัสผ่าน {isEditMode ? '(เว้นว่างถ้าไม่เปลี่ยน)' : '*'}</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="กรอกรหัสผ่าน" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">อีเมล *</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
-              placeholder="กรอกอีเมล"
-              required
+             <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>อีเมล *</FormLabel>
+                  <FormControl>
+                    <Input type="email" placeholder="กรอกอีเมล" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="first_name">ชื่อ *</Label>
-              <Input
-                id="first_name"
-                value={formData.first_name}
-                onChange={(e) => setFormData({...formData, first_name: e.target.value})}
-                placeholder="ชื่อ"
-                required
+            <div className="grid grid-cols-2 gap-4">
+               <FormField
+                control={form.control}
+                name="first_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ชื่อ *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="ชื่อ" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="last_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>นามสกุล *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="นามสกุล" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="last_name">นามสกุล *</Label>
-              <Input
-                id="last_name"
-                value={formData.last_name}
-                onChange={(e) => setFormData({...formData, last_name: e.target.value})}
-                placeholder="นามสกุล"
-                required
+            
+             <FormField
+              control={form.control}
+              name="rank"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ตำแหน่ง</FormLabel>
+                  <FormControl>
+                    <Input placeholder="ตำแหน่งงาน" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="locations_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>สถานที่ทำงาน *</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="เลือกสถานที่ทำงาน" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                       {locations.map((location) => (
+                        <SelectItem key={location.locations_id} value={location.locations_id.toString()}>
+                          {location.division} - {location.department}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+               <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>บทบาท</FormLabel>
+                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                       <FormControl>
+                         <SelectTrigger><SelectValue /></SelectTrigger>
+                       </FormControl>
+                       <SelectContent>
+                         <SelectItem value="user">ผู้ใช้งาน</SelectItem>
+                         <SelectItem value="admin">ผู้ดูแลระบบ</SelectItem>
+                       </SelectContent>
+                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>สถานะ</FormLabel>
+                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                       <FormControl>
+                         <SelectTrigger><SelectValue /></SelectTrigger>
+                       </FormControl>
+                       <SelectContent>
+                         <SelectItem value="active">ใช้งาน</SelectItem>
+                         <SelectItem value="inactive">ระงับการใช้งาน</SelectItem>
+                       </SelectContent>
+                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="rank">ตำแหน่ง</Label>
-            <Input
-              id="rank"
-              value={formData.rank}
-              onChange={(e) => setFormData({...formData, rank: e.target.value})}
-              placeholder="ตำแหน่งงาน"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="locations_id">สถานที่ทำงาน</Label>
-            <Select 
-              value={formData.locations_id} 
-              onValueChange={(value) => setFormData({...formData, locations_id: value})}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="เลือกสถานที่ทำงาน" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">ไม่ระบุ</SelectItem>
-                {locations.map((location) => (
-                  <SelectItem key={location.locations_id} value={location.locations_id.toString()}>
-                    {location.division} - {location.department}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="role">บทบาท</Label>
-            <Select 
-              value={formData.role} 
-              onValueChange={(value) => setFormData({...formData, role: value})}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="user">ผู้ใช้งาน</SelectItem>
-                <SelectItem value="admin">ผู้ดูแลระบบ</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="status">สถานะ</Label>
-            <Select 
-              value={formData.status} 
-              onValueChange={(value) => setFormData({...formData, status: value})}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">ใช้งาน</SelectItem>
-                <SelectItem value="inactive">ระงับการใช้งาน</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-              ยกเลิก
-            </Button>
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? 'กำลังบันทึก...' : (user ? 'อัปเดต' : 'เพิ่ม')}
-            </Button>
-          </div>
-        </form>
+            
+            <DialogFooter className="pt-4">
+                <Button type="button" variant="outline" onClick={onClose}>ยกเลิก</Button>
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                    {form.formState.isSubmitting ? 'กำลังบันทึก...' : (isEditMode ? 'อัปเดต' : 'เพิ่ม')}
+                </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

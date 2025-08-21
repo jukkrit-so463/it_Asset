@@ -1,114 +1,93 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+import { jwtDecode } from "jwt-decode";
+
+// 1. สร้าง Interface กลางสำหรับ Response ของ API ทั้งหมด
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
+
+// Type สำหรับ decoded token
+interface DecodedToken {
+  userId: number;
+  username: string;
+  role: 'admin' | 'user';
+  iat: number;
+  exp: number;
+}
 
 class ApiService {
   private baseURL: string;
 
-  constructor(baseURL: string) {
-    this.baseURL = baseURL;
+  constructor() {
+    this.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`;
+    const fullUrl = `${this.baseURL}${endpoint}`;
     const token = localStorage.getItem('token');
-    
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
+    const headers = new Headers(options.headers);
 
+    if (!headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
+    }
     if (token) {
-      headers.Authorization = `Bearer ${token}`;
+      headers.set('Authorization', `Bearer ${token}`);
     }
 
-    const response = await fetch(url, { ...options, headers });
-    const data = await response.json();
+    try {
+      const response = await fetch(fullUrl, { ...options, headers });
 
-    if (!response.ok) {
-      throw new Error(data.message || 'API request failed');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(errorData.message || 'เกิดข้อผิดพลาดในการติดต่อกับเซิร์ฟเวอร์');
+      }
+
+      const responseText = await response.text();
+      return responseText ? JSON.parse(responseText) : ({} as T);
+    } catch (error) {
+      console.error('API Service Error:', error);
+      throw error;
     }
-
-    return data;
   }
 
-  // Auth
-  async login(username: string, password: string) {
-    return this.request('/auth/login', {
+  // Auth Methods
+  async login(credentials: { username: string, password: string }): Promise<{ token: string }> {
+    return this.request<{ token: string }>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify(credentials),
     });
   }
-
-  async getProfile() {
-    return this.request('/auth/profile');
+  logout(): void { localStorage.removeItem('token'); }
+  isAuthenticated(): boolean {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+    try {
+      const decoded: DecodedToken = jwtDecode(token);
+      return decoded.exp * 1000 > Date.now();
+    } catch {
+      return false;
+    }
   }
 
-  // Assets
-  async getAssets() {
-    return this.request('/assets');
-  }
-
-  async getAsset(id: string) {
-    return this.request(`/assets/${id}`);
-  }
-
-  async createAsset(assetData: any) {
-    return this.request('/assets', {
-      method: 'POST',
-      body: JSON.stringify(assetData),
-    });
-  }
-
-  async updateAsset(id: string, assetData: any) {
-    return this.request(`/assets/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(assetData),
-    });
-  }
-
-  async deleteAsset(id: string) {
-    return this.request(`/assets/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
+  // 2. แก้ไข Return Type ของฟังก์ชัน CRUD ทั้งหมดให้ใช้ ApiResponse
   // Users
-  async getUsers() {
-    return this.request('/users');
-  }
-
-  async createUser(userData: any) {
-    return this.request('/users', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
-  }
+  getUsers() { return this.request<ApiResponse<any[]>>('/users'); }
+  createUser(userData: any) { return this.request('/users', { method: 'POST', body: JSON.stringify(userData) }); }
+  updateUser(id: string, userData: any) { return this.request(`/users/${id}`, { method: 'PUT', body: JSON.stringify(userData) }); }
+  deleteUser(id: string) { return this.request(`/users/${id}`, { method: 'DELETE' }); }
 
   // Locations
-  async getLocations() {
-    return this.request('/locations');
-  }
+  getLocations() { return this.request<ApiResponse<any[]>>('/locations'); }
+  createLocation(locationData: any) { return this.request('/locations', { method: 'POST', body: JSON.stringify(locationData) }); }
+  updateLocation(id: string, locationData: any) { return this.request(`/locations/${id}`, { method: 'PUT', body: JSON.stringify(locationData) }); }
+  deleteLocation(id: string) { return this.request(`/locations/${id}`, { method: 'DELETE' }); }
 
-  async createLocation(locationData: any) {
-    return this.request('/locations', {
-      method: 'POST',
-      body: JSON.stringify(locationData),
-    });
-  }
-
-  // Dashboard
-  async getDashboardStats() {
-    return this.request('/dashboard/stats');
-  }
-
-  async getDashboardCharts() {
-    return this.request('/dashboard/charts');
-  }
-
-  // Reports
-  async getAssetsSummary(params?: any) {
-    const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
-    return this.request(`/reports/assets-summary${queryString}`);
-  }
+  // Assets
+  getAssets() { return this.request<ApiResponse<any[]>>('/assets'); }
+  createAsset(assetData: any) { return this.request('/assets', { method: 'POST', body: JSON.stringify(assetData) }); }
+  updateAsset(id: string, assetData: any) { return this.request(`/assets/${id}`, { method: 'PUT', body: JSON.stringify(assetData) }); }
+  deleteAsset(id: string) { return this.request(`/assets/${id}`, { method: 'DELETE' }); }
 }
 
-export const apiService = new ApiService(API_BASE_URL);
+export const apiService = new ApiService();

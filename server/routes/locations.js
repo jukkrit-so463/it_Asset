@@ -57,4 +57,38 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
+// Update location
+router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { division, department, status } = req.body;
+
+    // ... (เพิ่มโค้ดสำหรับ validation)
+
+    await pool.execute(`
+      UPDATE locations 
+      SET division = ?, department = ?, status = ?
+      WHERE locations_id = ?
+    `, [division, department, status, id]);
+
+    res.json({ success: true, message: 'Location updated successfully' });
+  } catch (error) {
+    console.error('Update location error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// Delete location
+router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.execute('DELETE FROM locations WHERE locations_id = ?', [id]);
+    res.json({ success: true, message: 'Location deleted successfully' });
+  } catch (error) {
+    console.error('Delete location error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+
 export default router;

@@ -64,4 +64,38 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
+// Update user
+router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { email, first_name, last_name, rank, locations_id, role, status } = req.body;
+
+    // ... (เพิ่มโค้ดสำหรับ validation)
+
+    await pool.execute(`
+      UPDATE users 
+      SET email = ?, first_name = ?, last_name = ?, rank = ?, locations_id = ?, role = ?, status = ?
+      WHERE user_id = ?
+    `, [email, first_name, last_name, rank, locations_id, role, status, id]);
+
+    res.json({ success: true, message: 'User updated successfully' });
+  } catch (error) {
+    console.error('Update user error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// Delete user
+router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.execute('DELETE FROM users WHERE user_id = ?', [id]);
+    res.json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+
 export default router;
