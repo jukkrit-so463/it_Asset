@@ -1,0 +1,82 @@
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model IpAddress {
+  id          String    @id @default(cuid())
+  ipAddress   String    @unique
+  status      String    @default("Available") // Available, Assigned
+  device      Device?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Department {
+  id              String     @id @default(cuid())
+  name            String     @unique
+  specialIpRanges String? // Comma-separated list of IP ranges
+  divisions       Division[]
+  Device          Device[]
+}
+
+model Division {
+  id           String   @id @default(cuid())
+  name         String
+  department   Department @relation(fields: [departmentId], references: [id])
+  departmentId String
+  Device       Device[]
+
+  @@unique([name, departmentId])
+}
+
+model Device {
+  id            String      @id @default(cuid())
+  ipAddress     IpAddress   @relation(fields: [ipAddressId], references: [id])
+  ipAddressId   String      @unique
+  department    Department? @relation(fields: [departmentId], references: [id])
+  departmentId  String?
+  division      Division?   @relation(fields: [divisionId], references: [id])
+  divisionId    String?
+  deviceType    String
+  brand         String
+  model         String?
+  serviceTag    String      @unique
+  macAddress    String?     @unique
+  dateReceived  DateTime
+  status        String      // Active, In Repair, Retired
+  notes         String?
+  snMonitor     String?
+  snUps         String?
+  colorSticker  String?
+  user          User?       @relation(fields: [userId], references: [id])
+  userId        String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model User {
+  id            String    @id @default(cuid())
+  devices       Device[]
+  rank          String
+  firstName     String
+  lastName      String
+  username      String    @unique
+  password      String
+  contactNumber String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
