@@ -9,7 +9,7 @@ const Asset = () => {
   useEffect(() => {
     const fetchAssets = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/assets');
+        const res = await axios.get('/api/assets');
         setAssets(res.data);
       } catch (error) {
         console.error('Failed to fetch assets', error);
@@ -21,7 +21,7 @@ const Asset = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this asset?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/assets/${id}`);
+        await axios.delete(`/api/assets/${id}`);
         setAssets(assets.filter(asset => asset.id !== id));
       } catch (error) {
         console.error('Failed to delete asset', error);

@@ -16,7 +16,7 @@ const MyAsset = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const response = await axios.get('http://localhost:5000/api/assets', config);
+      const response = await axios.get('/api/assets', config);
       setAssets(response.data);
     } catch (err) {
       setError('Failed to fetch your asset details.');

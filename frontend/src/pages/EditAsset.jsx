@@ -39,10 +39,10 @@ const EditAsset = () => {
     const fetchData = async () => {
       try {
         const [assetRes, departmentsRes, divisionsRes, ipsRes] = await Promise.all([
-          axios.get(`http://localhost:5000/api/assets/${id}`),
-          axios.get('http://localhost:5000/api/departments'),
-          axios.get('http://localhost:5000/api/divisions'),
-          axios.get('http://localhost:5000/api/ips') // Fetch all IPs
+          axios.get(`/api/assets/${id}`),
+          axios.get('/api/departments'),
+          axios.get('/api/divisions'),
+          axios.get('/api/ips') // Fetch all IPs
         ]);
 
         const asset = assetRes.data;
@@ -183,7 +183,7 @@ const EditAsset = () => {
     e.preventDefault();
     setError('');
     try {
-      await axios.put(`http://localhost:5000/api/assets/${id}`, formData);
+      await axios.put(`/api/assets/${id}`, formData);
       navigate(`/assets/${id}`);
     } catch (err) {
       console.error("Failed to update asset", err);

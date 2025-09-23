@@ -49,9 +49,9 @@ const Register = () => {
     const fetchData = async () => {
       try {
         const [departmentsRes, divisionsRes, ipsRes, leasedDevicesRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/departments'),
-          axios.get('http://localhost:5000/api/divisions'),
-          axios.get('http://localhost:5000/api/ips/available'),
+          axios.get('/api/departments'),
+          axios.get('/api/divisions'),
+          axios.get('/api/ips/available'),
           axios.get('/service tag.csv')
         ]);
         setDepartments(departmentsRes.data);
@@ -221,7 +221,7 @@ const Register = () => {
     }
 
     try {
-      await axios.post('http://localhost:5000/api/auth/register', formData);
+      await axios.post('/api/auth/register', formData);
       alert('Registration successful! You can now log in.');
       navigate('/login');
     } catch (err) {

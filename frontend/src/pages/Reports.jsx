@@ -20,9 +20,9 @@ const Reports = () => {
     const fetchData = async () => {
       try {
         const [assetsRes, departmentsRes, divisionsRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/assets'),
-          axios.get('http://localhost:5000/api/departments'),
-          axios.get('http://localhost:5000/api/divisions'),
+          axios.get('/api/assets'),
+          axios.get('/api/departments'),
+          axios.get('/api/divisions'),
         ]);
         setAssets(assetsRes.data);
         setDepartments(departmentsRes.data);

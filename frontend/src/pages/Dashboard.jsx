@@ -49,9 +49,9 @@ const Dashboard = () => {
   const fetchData = useCallback(async () => {
     try {
       const [ipsRes, departmentsRes, divisionsRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/ips?status=all'),
-        axios.get('http://localhost:5000/api/departments'),
-        axios.get('http://localhost:5000/api/divisions')
+        axios.get('/api/ips?status=all'),
+        axios.get('/api/departments'),
+        axios.get('/api/divisions')
       ]);
       setIps(ipsRes.data);
       setTotalIpCount(ipsRes.data.length);

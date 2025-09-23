@@ -9,7 +9,7 @@ const DepartmentStats = () => {
   useEffect(() => {
     const fetchAssets = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/assets');
+        const res = await axios.get('/api/assets');
         const assets = res.data;
         
         // Process stats for departments

@@ -15,7 +15,7 @@ const AssetDetail = () => {
           Authorization: `Bearer ${token}`,
         },
       };
-      const res = await axios.get(`http://localhost:5000/api/assets/${id}`, config);
+      const res = await axios.get(`/api/assets/${id}`, config);
       setAsset(res.data);
     };
     fetchAsset();
@@ -30,7 +30,7 @@ const AssetDetail = () => {
             Authorization: `Bearer ${token}`,
           },
         };
-        await axios.delete(`http://localhost:5000/api/assets/${id}`, config);
+        await axios.delete(`/api/assets/${id}`, config);
         navigate('/');
       } catch (error) {
         console.error('Failed to delete asset', error);
