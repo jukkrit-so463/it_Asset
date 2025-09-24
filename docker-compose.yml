@@ -1,59 +1,47 @@
-version: '3.8'
-
 services:
   backend:
-    build:
-      context: ./backend
-    container_name: it_asset_backend
+    build: ./backend
+    container_name: it-asset-backend
     restart: unless-stopped
+    ports:
+      - "5000:5000"
     environment:
-      DATABASE_URL: "${DATABASE_URL}"
+      - DATABASE_URL=mysql://user:password@db:3306/asset_nmd_gemini
+      - JWT_SECRET=YOUR_JWT_SECRET # เปลี่ยนเป็น secret ของคุณ
     networks:
       - app-network
     depends_on:
       - db
 
   frontend:
-    build:
-      context: ./frontend
-    container_name: it_asset_frontend
-    restart: unless-stopped
-    networks:
-      - app-network
-
-  db:
-    image: mysql:8.0
-    container_name: asset_nmd_gemini
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
-      MYSQL_DATABASE: "${DB_DATABASE}"
-      MYSQL_USER: "${DB_USER}"
-      MYSQL_PASSWORD: "${DB_PASSWORD}"
-    volumes:
-      - mysql-data:/var/lib/mysql
-    networks:
-      - app-network
-
-  nginx:
-    image: nginx:stable-alpine
-    container_name: it_asset_nginx
+    build: ./frontend
+    container_name: it-asset-frontend
     restart: unless-stopped
     ports:
       - "80:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-      - ./frontend/dist:/usr/share/nginx/html # Mount the built frontend files
     networks:
       - app-network
     depends_on:
-      - frontend
       - backend
+
+  db:
+    image: mysql:8.0
+    container_name: it-asset-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword # เปลี่ยน password ของ root
+      MYSQL_DATABASE: asset_nmd_gemini
+      MYSQL_USER: user # เปลี่ยน username
+      MYSQL_PASSWORD: password # เปลี่ยน password
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./asset_nmd_gemini.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
+
+volumes:
+  db-data:
 
 networks:
   app-network:
     driver: bridge
-
-volumes:
-  mysql-data:
-    driver: local
