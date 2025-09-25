@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 17, 2025 at 03:40 AM
+-- Generation Time: Sep 24, 2025 at 03:57 AM
 -- Server version: 10.4.22-MariaDB
 -- PHP Version: 7.4.27
 
@@ -72,12 +72,12 @@ INSERT INTO `department` (`id`, `name`, `specialIpRanges`) VALUES
 ('cmewisvse0035fzmgr2dlzpdv', 'กวส.', NULL),
 ('cmewisvsr003gfzmgylwgztcw', 'กกป.', NULL),
 ('cmewisvt4003rfzmgk01utczq', 'ห้องประชุม พร.', NULL),
-('cmewisvtd003yfzmgsifhijnm', 'กวตบ.', NULL),
-('cmewisvu0004ffzmg3spmxznc', 'กสพ.', '10.106.59.101-10.106.59.160'),
-('cmewisvui004ufzmgv24jau2v', 'กวก.', '10.106.59.161-10.106.59.205'),
+('cmewisvtd003yfzmgsifhijnm', 'กวตบ.', '10.106.59.201-10.106.59.245'),
+('cmewisvu0004ffzmg3spmxznc', 'กสพ.', '10.106.59.106-10.106.59.155'),
+('cmewisvui004ufzmgv24jau2v', 'กวก.', '10.106.59.161-10.106.59.200'),
 ('cmewisvv6005bfzmgxgi5lbiy', 'วพร.', NULL),
-('cmewisvvj005mfzmg7f4np7e4', 'โรงเรียนนาวิกเวชกิจ', '10.106.59.50-10.106.59.100'),
-('cmewisvvw005xfzmgh2preqch', 'กสน.', '10.106.57.'),
+('cmewisvvj005mfzmg7f4np7e4', 'โรงเรียนนาวิกเวชกิจ', '10.106.59.50-10.106.59.105'),
+('cmewisvvw005xfzmgh2preqch', 'กสน.', NULL),
 ('cmewisvw90068fzmgrj6mo347', 'ศพส.', NULL),
 ('cmewisvwl006jfzmgq3k26qjo', 'สถาบันเวชศาสตร์ทางทะเล', NULL),
 ('cmewisvx7006wfzmge4ya111h', 'สลก.', NULL),
@@ -97,16 +97,27 @@ CREATE TABLE `device` (
   `divisionId` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `deviceType` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
   `brand` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `model` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `model` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `serviceTag` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `macAddress` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `macAddress` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `dateReceived` datetime(3) NOT NULL,
   `status` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
   `createdAt` datetime(3) NOT NULL DEFAULT current_timestamp(3),
   `updatedAt` datetime(3) NOT NULL,
   `notes` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `colorSticker` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `snMonitor` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `snUps` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `userId` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `device`
+--
+
+INSERT INTO `device` (`id`, `ipAddressId`, `departmentId`, `divisionId`, `deviceType`, `brand`, `model`, `serviceTag`, `macAddress`, `dateReceived`, `status`, `createdAt`, `updatedAt`, `notes`, `colorSticker`, `snMonitor`, `snUps`, `userId`) VALUES
+('cmfqlmmcb0001fzhgj11clbj3', 'cmewisxzd010sfzmg3adqhk0q', 'cmewisvvj005mfzmg7f4np7e4', 'cmewisvvn005qfzmgumi92q1t', 'PC เช่า', 'dell', 'tytyt', '275B8T3', 'ytyty', '2025-07-10 00:00:00.000', 'Active', '2025-09-19 08:49:53.051', '2025-09-19 08:49:53.051', 'tyytytyt', 'แดง PC 191 เครื่อง', '2X41GJ3', '221104040540628', 'cmfqlmmcb0000fzhgh58erziw'),
+('cmfqloqwn0002fzhgbrod54ta', 'cmewisxzf010tfzmgalygvgqm', 'cmewisvvj005mfzmg7f4np7e4', 'cmewisvvu005wfzmgqmma86ae', 'PC เช่า', 'dell', 'rtrtr', '135B8T3', 'trtrtrtr', '2025-06-10 00:00:00.000', 'Active', '2025-09-19 08:51:32.279', '2025-09-19 08:51:32.279', 'rtrtrt', 'แดง PC 191 เครื่อง', '1R31GJ3', '221104040540612', 'cmfqloqwn0003fzhgos7i5xxw');
 
 -- --------------------------------------------------------
 
@@ -1328,10 +1339,10 @@ INSERT INTO `ipaddress` (`id`, `ipAddress`, `status`, `createdAt`, `updatedAt`) 
 ('cmewisxz0010nfzmgh5ds2j3s', '10.106.59.47', 'Available', '2025-08-29 07:37:43.933', '2025-08-29 07:37:43.933'),
 ('cmewisxz3010ofzmg180o24ul', '10.106.59.48', 'Available', '2025-08-29 07:37:43.935', '2025-08-29 07:37:43.935'),
 ('cmewisxz6010pfzmgqs6jzve0', '10.106.59.49', 'Available', '2025-08-29 07:37:43.939', '2025-08-29 07:37:43.939'),
-('cmewisxz9010qfzmglonkpegg', '10.106.59.50', 'Available', '2025-08-29 07:37:43.941', '2025-09-15 08:11:41.211'),
-('cmewisxzb010rfzmgjvr5k47v', '10.106.59.51', 'Available', '2025-08-29 07:37:43.943', '2025-09-15 08:13:43.568'),
-('cmewisxzd010sfzmg3adqhk0q', '10.106.59.52', 'Available', '2025-08-29 07:37:43.945', '2025-08-29 07:37:43.945'),
-('cmewisxzf010tfzmgalygvgqm', '10.106.59.53', 'Available', '2025-08-29 07:37:43.948', '2025-08-29 07:37:43.948'),
+('cmewisxz9010qfzmglonkpegg', '10.106.59.50', 'Available', '2025-08-29 07:37:43.941', '2025-09-19 08:50:48.278'),
+('cmewisxzb010rfzmgjvr5k47v', '10.106.59.51', 'Available', '2025-08-29 07:37:43.943', '2025-09-19 08:46:39.356'),
+('cmewisxzd010sfzmg3adqhk0q', '10.106.59.52', 'Assigned', '2025-08-29 07:37:43.945', '2025-09-19 08:49:53.065'),
+('cmewisxzf010tfzmgalygvgqm', '10.106.59.53', 'Assigned', '2025-08-29 07:37:43.948', '2025-09-19 08:51:32.295'),
 ('cmewisxzh010ufzmgy6iihqsg', '10.106.59.54', 'Available', '2025-08-29 07:37:43.950', '2025-08-29 07:37:43.950'),
 ('cmewisxzj010vfzmgblk1ibco', '10.106.59.55', 'Available', '2025-08-29 07:37:43.951', '2025-08-29 07:37:43.951'),
 ('cmewisxzl010wfzmgfizvl4ae', '10.106.59.56', 'Available', '2025-08-29 07:37:43.953', '2025-08-29 07:37:43.953'),
@@ -1549,8 +1560,16 @@ CREATE TABLE `user` (
   `password` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
   `createdAt` datetime(3) NOT NULL DEFAULT current_timestamp(3),
   `updatedAt` datetime(3) NOT NULL,
-  `contactNumber` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL
+  `contactNumber` varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `user`
+--
+
+INSERT INTO `user` (`id`, `rank`, `firstName`, `lastName`, `username`, `password`, `createdAt`, `updatedAt`, `contactNumber`) VALUES
+('cmfqlmmcb0000fzhgh58erziw', 'จ.ท.หญิง', 'rrrrhh', 'ioioioi', 'user2', '$2b$10$WwYVlTeh0/sAZnezx3puOukpbIl.PQFJ6N./Fxg5EVPlYDzsQSMr2', '2025-09-19 08:49:53.051', '2025-09-19 08:49:53.051', '0214525412'),
+('cmfqloqwn0003fzhgos7i5xxw', 'จ.ท.', 'สุระ', 'มีบรรจง', 'user1', '$2b$10$FgsA7gaSoRkfFOsxWLO3YeMCKih8f2mmaQ00kpWAPh.41MqYJT18e', '2025-09-19 08:51:32.279', '2025-09-19 08:51:32.279', '0254525685');
 
 -- --------------------------------------------------------
 
@@ -1575,10 +1594,19 @@ CREATE TABLE `_prisma_migrations` (
 
 INSERT INTO `_prisma_migrations` (`id`, `checksum`, `finished_at`, `migration_name`, `logs`, `rolled_back_at`, `started_at`, `applied_steps_count`) VALUES
 ('0296d6b7-5653-4870-9d9b-9b886f11cf9a', 'ab17cda6c2bd598df587b98830bf919d7d09ec342cd92cc52760974f50f76888', '2025-08-29 07:37:25.658', '20250829050034_add_admin_model', NULL, NULL, '2025-08-29 07:37:25.609', 1),
+('0465ab4a-6734-479e-9148-7352290e2522', '12c8a16e51a01a22743341b8c530570390c8b26c937f56c614862676fa5ea7d9', '2025-09-19 07:25:35.487', '20250903070922_add_notes_to_device', NULL, NULL, '2025-09-19 07:25:35.469', 1),
+('0e27d0d2-5053-481b-91c0-9806b4bab5e6', '4aec321e316c05e9ac829f8a66831b0a3bd2466fff4b524270253ce816dbea77', '2025-09-19 07:25:35.503', '20250911061810_update_user_contact_number', NULL, NULL, '2025-09-19 07:25:35.488', 1),
+('168ff7ed-3398-41b1-abd2-0ac15bfe2b65', '3132bd1a82ff1fda07d8676e449ecd426be1e8381d4df87f365e4f730d38580a', '2025-09-19 07:25:35.625', '20250918031115_make_model_contact_optional', NULL, NULL, '2025-09-19 07:25:35.519', 1),
+('23e30a9b-b5b8-4cc9-9553-b0470ac3d686', '6bdabf9dbd6fe647b755e43569e5eac80b68c42507b2a45527d70fc6c0328b8e', '2025-09-19 07:25:35.511', '20250915015111_add_special_ip_ranges_to_department', NULL, NULL, '2025-09-19 07:25:35.504', 1),
+('2a63968d-e423-4727-9204-694f5c98d349', '0b2ae2267a7364b46e08e780b64df162878bd1b2785ebbc2d1af45d7e9dd8ccb', '2025-09-19 07:25:35.518', '20250918023322_add_leased_device_fields', NULL, NULL, '2025-09-19 07:25:35.512', 1),
 ('45a0453e-e181-4970-8c90-a9474cd96e9f', '4aec321e316c05e9ac829f8a66831b0a3bd2466fff4b524270253ce816dbea77', '2025-09-11 06:18:10.568', '20250911061810_update_user_contact_number', NULL, NULL, '2025-09-11 06:18:10.549', 1),
+('4f0abb69-aef5-4b99-a53d-4c1aba0f6562', '6061eaf4f1bf88cda2c17607b1848c56fcef9086cbcc272ab8d96cd83f4e34fb', '2025-09-19 08:41:00.998', '20250919084100_npx_prisma_generate', NULL, NULL, '2025-09-19 08:41:00.898', 1),
 ('8acbd086-9e9c-4ffa-b042-0e832f37dd70', '12c8a16e51a01a22743341b8c530570390c8b26c937f56c614862676fa5ea7d9', '2025-09-03 07:09:22.370', '20250903070922_add_notes_to_device', NULL, NULL, '2025-09-03 07:09:22.343', 1),
 ('8d82b338-b71c-4afc-9abc-0331f89dd021', '6bdabf9dbd6fe647b755e43569e5eac80b68c42507b2a45527d70fc6c0328b8e', '2025-09-15 01:51:11.116', '20250915015111_add_special_ip_ranges_to_department', NULL, NULL, '2025-09-15 01:51:11.100', 1),
-('a75d74cf-62a0-40d1-b6d7-eb036d04bf66', '3ab0a4b447fc51a9b16193f483c2aaecc87644e810a26484bee25dbe44dfbabf', '2025-08-29 07:37:25.606', '20250829041308_init', NULL, NULL, '2025-08-29 07:37:25.038', 1);
+('931b17d0-9450-48fc-8cc1-abea460d02f0', '3ab0a4b447fc51a9b16193f483c2aaecc87644e810a26484bee25dbe44dfbabf', '2025-09-19 07:25:35.432', '20250829041308_init', NULL, NULL, '2025-09-19 07:25:34.826', 1),
+('a75d74cf-62a0-40d1-b6d7-eb036d04bf66', '3ab0a4b447fc51a9b16193f483c2aaecc87644e810a26484bee25dbe44dfbabf', '2025-08-29 07:37:25.606', '20250829041308_init', NULL, NULL, '2025-08-29 07:37:25.038', 1),
+('d877faa1-320b-43e0-9716-e987538cb95e', 'ab17cda6c2bd598df587b98830bf919d7d09ec342cd92cc52760974f50f76888', '2025-09-19 07:25:35.467', '20250829050034_add_admin_model', NULL, NULL, '2025-09-19 07:25:35.434', 1),
+('db1f82ed-2e3a-4297-9eea-643fa5c396f4', 'c54a6d72c3e1d332b4c32aa959a2da10104f1b5f398ccf50497fff13ca57398d', '2025-09-19 07:25:35.663', '20250918032154_make_macaddress_optional', NULL, NULL, '2025-09-19 07:25:35.626', 1);
 
 --
 -- Indexes for dumped tables

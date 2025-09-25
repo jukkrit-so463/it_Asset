@@ -28,11 +28,13 @@ services:
     image: mysql:8.0
     container_name: it-asset-db
     restart: unless-stopped
+    ports:
+    - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword # เปลี่ยน password ของ root
+      MYSQL_ROOT_PASSWORD: Sompan2528***
       MYSQL_DATABASE: asset_nmd_gemini
-      MYSQL_USER: user # เปลี่ยน username
-      MYSQL_PASSWORD: password # เปลี่ยน password
+      MYSQL_USER: user
+      MYSQL_PASSWORD: Sompan2528***
     volumes:
       - db-data:/var/lib/mysql
       - ./asset_nmd_gemini.sql:/docker-entrypoint-initdb.d/init.sql
