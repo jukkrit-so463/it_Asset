@@ -40,7 +40,7 @@ CREATE TABLE `admin` (
 --
 
 INSERT INTO `admin` (`id`, `username`, `password`, `createdAt`, `updatedAt`) VALUES
-('cmewison40000fzbkfpv4ujr6', 'admin', '$2b$10$kHk96qYMqYMRontoOfjgz.QRv9L9bIBJATYHO3AhyYxSjhv/GTD2e', '2025-08-29 07:37:31.838', '2025-08-29 07:37:31.838');
+('cmewison40000fzbkfpv4ujr6', 'admin1', '$2b$10$f6B.j/9.gTRC1t15.N2aHeAPU/bL655d2AVBUSrL1jV19rnzC.e8m', '2025-08-29 07:37:31.838', '2025-08-29 07:37:31.838');
 
 -- --------------------------------------------------------
 
