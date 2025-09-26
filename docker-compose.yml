@@ -19,7 +19,7 @@ services:
     restart: unless-stopped
     ports:
       - "3306:3306"
-    volumes: # <--- ย้ายมาไว้ที่นี่
+    volumes:
       - db-data:/var/lib/mysql
       - ./asset_nmd_gemini.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
@@ -27,7 +27,7 @@ services:
       MYSQL_DATABASE: asset_nmd_gemini
       MYSQL_USER: user
       MYSQL_PASSWORD: Sompan2528***
-    networks: # <--- เพิ่ม network ให้ db service
+    networks: # <--- เพิ่ม 2 บรรทัดนี้
       - app-network
   frontend:
     build: ./frontend
