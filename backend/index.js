@@ -19,7 +19,7 @@ app.use('/api/ips', ipRoutes);
 app.use('/api/assets', protect, assetRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/divisions', divisionRoutes);
-app.use('/api/auth', authRoutes); // New line
+app.use('/api/auth', authRoutes);
 
 
 const PORT = process.env.PORT || 5000;

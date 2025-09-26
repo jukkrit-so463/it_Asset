@@ -8,16 +8,18 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install app dependencies
+RUN apk add --no-cache python3 make g++
 RUN npm install
 
 # Copy the rest of the application code
 COPY . .
+RUN chmod +x /app/wait-for-it.sh # <--- เพิ่มบรรทัดนี้
 
 # Generate Prisma Client
 RUN npx prisma generate
 
 # Make port 3000 available to the world outside this container
-EXPOSE 3000
+EXPOSE 5000
 
 # Run the app when the container launches
-CMD ["node", "index.js"]
+CMD ["/app/wait-for-it.sh", "db", "node", "index.js"] # <--- แก้ไขบรรทัดนี้
