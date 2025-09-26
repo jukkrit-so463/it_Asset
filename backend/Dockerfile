@@ -8,12 +8,12 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install app dependencies
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache python3 make g++ mysql-client
 RUN npm install
 
 # Copy the rest of the application code
 COPY . .
-RUN chmod +x /app/wait-for-it.sh # <--- เพิ่มบรรทัดนี้
+RUN chmod +x /app/wait-for-it.sh
 
 # Generate Prisma Client
 RUN npx prisma generate
