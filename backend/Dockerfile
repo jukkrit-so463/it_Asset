@@ -22,4 +22,5 @@ RUN npx prisma generate
 EXPOSE 5000
 
 # Run the app when the container launches
-CMD ["/app/wait-for-it.sh", "db:3306", "--", "node", "index.js"]
+
+CMD ["/app/wait-for-it.sh", "db", "--", "node", "index.js"]
