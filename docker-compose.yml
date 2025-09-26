@@ -10,7 +10,7 @@ services:
       - JWT_SECRET=e4a8b7c6d5f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7
     networks:
       - app-network
-    depends_on: # <--- แก้ไขส่วนนี้
+    depends_on:
       - db
   db:
     image: mysql:8.0
@@ -19,24 +19,27 @@ services:
     restart: unless-stopped
     ports:
       - "3306:3306"
+    volumes: # <--- ย้ายมาไว้ที่นี่
+      - db-data:/var/lib/mysql
+      - ./asset_nmd_gemini.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
       MYSQL_ROOT_PASSWORD: Sompan2528***
       MYSQL_DATABASE: asset_nmd_gemini
       MYSQL_USER: user
       MYSQL_PASSWORD: Sompan2528***
+    networks: # <--- เพิ่ม network ให้ db service
+      - app-network
   frontend:
     build: ./frontend
     container_name: it-asset-frontend
     restart: unless-stopped
     ports:
       - "80:80"
-    volumes:
-      - db-data:/var/lib/mysql
-      - ./asset_nmd_gemini.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - app-network
     depends_on:
       - backend
+
 volumes:
   db-data:
 
